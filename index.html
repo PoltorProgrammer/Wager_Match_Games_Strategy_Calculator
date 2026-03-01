@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wager-Match Games Strategy Calculator</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🃏</text></svg>">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Wager-Match Games Strategy Calculator</h1>
+            <p>Calculate your Expected Value (EV) and required bankroll based on your historical win rates.</p>
+        </header>
+
+        <main>
+            <div class="top-grid">
+                <section class="inputs-section panel glass" id="stats-panel">
+                    <div class="panel-header">
+                        <h2>Your Stats</h2>
+                        <button class="btn btn-icon" onclick="toggleLocalEditor('stats')" id="edit-stats">⚙️</button>
+                    </div>
+                    <div class="input-grid">
+                        <div class="input-group">
+                            <label for="bankroll">Current Bankroll ($)</label>
+                            <input type="number" id="bankroll" value="1000" min="0" step="10">
+                        </div>
+                        <div class="input-group">
+                            <label for="risk">Risk Tolerance (%)</label>
+                            <input type="number" id="risk" value="1" min="0.1" max="50" step="0.1">
+                        </div>
+                    </div>
+
+                    <div class="config-section" id="game-config" style="display: none;">
+                        <h3>Game Configuration</h3>
+                        <div class="input-grid">
+                            <div class="input-group">
+                                <label for="total-players-input">Total Players</label>
+                                <input type="number" id="total-players-input" value="6" min="2" max="20"
+                                    oninput="updateConfig('totalPlayers', this.value)">
+                            </div>
+                            <div class="input-group">
+                                <label for="paid-positions-input">Paid Positions</label>
+                                <input type="number" id="paid-positions-input" value="3" min="1" max="19"
+                                    oninput="updateConfig('numPaidPositions', this.value)">
+                            </div>
+                        </div>
+                        <div style="margin-top: 1rem; text-align: right;">
+                            <button class="btn" style="background: var(--danger); font-size: 0.6rem;"
+                                onclick="resetToDefaults()">Reset to Defaults</button>
+                        </div>
+                    </div>
+
+                    <h3>Recent Game History (Number of Placements)</h3>
+                    <div class="input-grid history-grid" id="history-grid">
+                        <!-- JS will populate this -->
+                    </div>
+
+                    <div class="stats-summary" id="stats-summary">
+                        <!-- Javascript will populate probabilities here -->
+                        <p>Total Games: <span id="total-games">6</span></p>
+                        <p>Win Rate: <span id="win-rate">50%</span> (In the money)</p>
+                    </div>
+                </section>
+
+                <section class="recommendation-section panel glass highlight">
+                    <h2>Recommendation</h2>
+                    <div id="recommendation-content">
+                        <h3 id="rec-level">Level 1</h3>
+                        <p id="rec-desc">Based on your bankroll and EV, this is the optimal level to play with a <span
+                                id="rec-ror">1%</span> risk of ruin.</p>
+                    </div>
+
+                    <div class="mini-recorder highlight-blue full-width">
+                        <h3>Quick Record: <span id="active-level-name">Level 1</span></h3>
+                        <div class="button-grid mini" id="record-buttons">
+                            <!-- JS will populate this -->
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+
+
+            <section class="table-section panel glass" id="table-panel">
+                <div class="panel-header">
+                    <h2>Level Analysis</h2>
+                    <button class="btn btn-icon" onclick="toggleLocalEditor('table')">⚙️</button>
+                </div>
+                <div class="table-container">
+                    <table id="level-table">
+                        <thead>
+                            <tr id="header-row">
+                                <th>Level</th>
+                                <th>Fee</th>
+                                <!-- JS will populate prize headers here -->
+                                <th>Entries</th>
+                                <th>EV</th>
+                                <th>Req. Bankroll (<span id="ror-label">1%</span> RoR)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Javascript will populate rows here -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="guide-section panel glass">
+                <h2>Strategy Guide: Managing Your Bankroll</h2>
+                <div class="guide-content">
+                    <div class="tip-box">
+                        <h3>📈 When to Move Up</h3>
+                        <p>Only move to the next level when your current bankroll <strong>exceeds</strong> the "Required
+                            Bankroll" for that level. This threshold is designed to protect you from a "bad run" of
+                            games.</p>
+                    </div>
+                    <div class="tip-box">
+                        <h3>📉 What if I Lose?</h3>
+                        <p>If you lose, update your <strong>Current Bankroll</strong> and add a <strong>4th-6th
+                                Place</strong> to your history. If your bankroll falls below the requirement for your
+                            current level, <strong>move back down</strong> to the previous level immediately. This
+                            discipline is what prevents "ruin."</p>
+                    </div>
+                    <div class="tip-box">
+                        <h3>🔄 Number of Attempts</h3>
+                        <p>The "Required Bankroll" essentially tells you how many "bullets" you have. For example, if a
+                            level costs $100 and requires a $2,000 bankroll, you are prepared to handle a
+                            variance-driven drawdown. Don't think of it as "how many attempts," but rather "am I still
+                            above the safety line?"</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="explanation-section panel glass">
+                <h2>Comprehensive User Guide & Mathematical Strategy</h2>
+                <div class="explanation-content extensive">
+                    <div class="calc-box full-width">
+                        <h3>Overview</h3>
+                        <p>This calculator is a professional-grade bankroll management tool designed for
+                            <strong>Wager-Match Games</strong>. It uses real-time statistical analysis to tell you
+                            exactly which levels you can play based on your historical performance and risk appetite.
+                            The goal is simple: <strong>Eliminate your chance of going broke (Ruin) while maximizing
+                                your long-term profit.</strong>
+                        </p>
+                    </div>
+
+                    <div class="calc-box">
+                        <h3>1. Historical Data & Accuracy</h3>
+                        <p>The system calculates your skill level by analyzing your <strong>Recent Game
+                                History</strong>. It converts your 1st, 2nd, and 3rd place counts into a probability
+                            distribution.</p>
+                        <p><strong>⚠️ The Sample Size Warning:</strong> If you have only played 5-10 games, your stats
+                            might be artificially high or low due to luck. To solve this, we recommend a <strong>Manual
+                                Buffer</strong>: Enter your actual stats, but we suggest adding <strong>+2 to every
+                                category</strong> (1st, 2nd, 3rd) and <strong>+6 to Losses</strong> as a starting base.
+                            This gives you a more stable "Safety Net" of 12 games before you trust your own luck too
+                            much.</p>
+                        <p class="formula">P(pos) = Count(pos) / Total Games</p>
+                    </div>
+
+                    <div class="calc-box">
+                        <h3>2. Expected Value (EV): Your "Edge"</h3>
+                        <p>EV is the most important number in gambling. It identifies if a game is built for you to win
+                            or lose in the long run.
+                        <ul>
+                            <li><strong>Positive EV (+EV):</strong> You have a skill advantage. Over 1,000 games, you
+                                WILL make money.</li>
+                            <li><strong>Negative EV (-EV):</strong> The house fees and the payouts are working against
+                                you. Over time, you WILL lose money.</li>
+                        </ul>
+                        </p>
+                        <p class="formula">EV = Σ (Position Probability × Net Profit) - Entry Fee</p>
+                    </div>
+
+                    <div class="calc-box">
+                        <h3>3. Risk of Ruin (The "Safety Percentage": <span id="expl-ror">5%</span>)</h3>
+                        <p>Even a professional player with a huge edge can lose 10 games in a row. This is
+                            <strong>Variance</strong>. The "Risk of Ruin" formula calculates how much cushion you need
+                            to survive those losing streaks.
+                        </p>
+                        <p>If you set your Risk Tolerance to <strong><span id="expl-ror-val">5%</span></strong>, it
+                            means there is only a 1-in-20
+                            chance that your bankroll will hit $0 before your mathematical edge takes over. Lowering
+                            this percentage makes the calculator "stricter," requiring a much larger bankroll before
+                            suggesting you move up.</p>
+                        <p class="formula">Req. Bankroll = (-ln(Risk) × Variance) / (2 × EV)</p>
+                    </div>
+
+                    <div class="calc-box">
+                        <h3>4. How to Use the Dashboard</h3>
+                        <p>
+                        <ul>
+                            <li><strong>Monitor the Recommendation:</strong> The dashboard automatically highlights the
+                                "Best" level. This is the highest level where you are both profitable (+EV) and safe
+                                from ruin.</li>
+                            <li><strong>Watch the "Entries" Column:</strong> This shows how many "bullets" you have
+                                left. If this number turns <strong>Orange</strong> or <strong>Red</strong>, you are in
+                                the danger zone—move down immediately!</li>
+                            <li><strong>The Edit Mode:</strong> Use the ⚙️ icon to manually fix your bankroll if you
+                                make an error or to adjust the prizes for each level as the game economy changes.</li>
+                        </ul>
+                        </p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
